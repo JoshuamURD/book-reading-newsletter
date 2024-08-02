@@ -3,12 +3,18 @@ import PyPDF2
 import ebooklib
 from ebooklib import epub
 
+#Dependency for gemeni
+import google.generativeai as genai
+
 #Dependencies to send email
 import email, smtplib, ssl
 from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+
+# Managing progress using SQLITE
+import sqlite3
 
 def send_email(subject, message, from_addr, to_addr, password, filename):
     msg = MIMEMultipart()
@@ -55,7 +61,27 @@ def extract_pdf_pages(input_file_path, output_file_path, start_page, end_page):
 
         with open(output_file_path, 'wb') as output_file:
             pdf_writer.write(output_file)
-            
+         
+# A function to read a pdf   
+def readPdf(pdf="document.pdf"):
+    # Create a PyPDF2 reader object
+    pdf_reader = PyPDF2.PdfReader(pdf)
+
+    # Extract the text from the PDF
+    text = ""
+    for page in range(len(pdf_reader.pages)):
+        text += pdf_reader.pages[page].extract_text()
+
+    return text
+
+# a function to generate questions
+def generate_questions(text):
+    GOOGLE_API_KEY=input("Please input GemininAPI key: ")
+    genai.configure(api_key=GOOGLE_API_KEY)
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    response = model.generate_content("Generate questions for this text: " + text)
+    questions = response.text
+    return questions
 
 
 def main():
@@ -65,12 +91,15 @@ def main():
     #end_page=3
     #extract_pdf_pages(file_path, output_path, start_page, end_page)
     
+    text = readPdf()
+    
     subject = "Test Email"
-    message = "This is a test email with a PDF attachment."
+    message = generate_questions(text)
     from_addr = ""
     to_addr = ""
-    password = "oicc pfnt nptz wezs"
+    password = input("input email password: ")
     filename = "document.pdf"
+    
     send_email(subject, message, from_addr, to_addr, password, filename)
 
 
